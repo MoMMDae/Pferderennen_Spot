@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Vertriebsrennen Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    h1 { 
+      text-align: center; 
+      margin-bottom: 40px;
+    }
+    /* --- Rennstrecke --- */
+    .race-track {
+      position: relative;
+      background: #e8b39b; /* braune Strecke */
+      border: 2px solid #444;
+      border-radius: 8px;
+      margin: 50px 0;
+      height: 140px;
+      overflow: hidden;
+      transition: background 0.5s ease;
+    }
+    .start {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 8px;
+      background: white;
+    }
+    .goal {
+      position: absolute;
+      right: 0;
+      top: 0;
+      height: 100%;
+      width: 50px;
+      text-align: center;
+      font-size: 100px;
+      line-height: 140px;
+    }
+    /* --- Pferd & Reiter --- */
+    .horse {
+      position: absolute;
+      font-size: 80px;
+      top: 50px;
+      left: 0;
+      transition: left 1s ease-out;
+      text-align: center;
+      transform: scaleX(-1);
+    }
+    .horse-name {
+      position: absolute;
+      top: 10px;
+      font-weight: bold;
+      text-align: center;
+      width: 150px;
+    }
+    .progress-label {
+      position: absolute;
+      top: 115px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #222;
+      text-align: center;
+      width: 80px;
+    }
+    /* --- Eingabemaske --- */
+    .form-section {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      margin-top: 40px;
+    }
+    textarea {
+      width: 100%;
+      height: 120px;
+      margin-top: 10px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>🏆 Vertriebsrennen Dashboard</h1>
+
+  <div id="raceArea"></div>
+
+  <!-- Eingabemaske unten -->
+  <div class="form-section" id="formSection">
+    <form id="inputForm">
+      <label>Monat auswählen: 
+        <select id="month">
+          <option value="September">September</option>
+          <option value="Oktober">Oktober</option>
+          <option value="November">November</option>
+          <option value="Dezember">Dezember</option>
+        </select>
+      </label><br><br>
+
+      <label>Aktuelle Verkäufe (CSV oder Copy/Paste, Format: Name;Wert pro Zeile)</label>
+      <textarea id="salesInput" placeholder="Beispiel:
+Enes;20
+Florian;40
+Philipp;12
+..."></textarea>
+      <br><br>
+      <button type="submit">🏁 Rennen starten</button>
+    </form>
+  </div>
+
+  <script>
+    // --- Admin Passwort Kontrolle ---
+    const adminPassword = "geheim123";
+    const userInput = prompt("Bitte Passwort eingeben, um Daten einzugeben:");
+    if(userInput !== adminPassword) {
+      document.getElementById("formSection").style.display = "none";
+      alert("Du hast kein Bearbeitungsrecht. Du siehst nur die Rennanzeige.");
+    }
+
+    // --- Soll-Ziele pro Monat und Mitarbeiter ---
+    const targets = {
+      "Enes":     { "September": 5,  "Oktober": 74, "November": 94,  "Dezember": 79 },
+      "Florian":  { "September": 15, "Oktober": 124,"November": 154, "Dezember": 104},
+      "Philipp":  { "September": 7,  "Oktober": 106,"November": 124, "Dezember": 124},
+      "Mert":     { "September": 20, "Oktober": 154,"November": 174, "Dezember": 154},
+      "Schemus":  { "September": 15, "Oktober": 124,"November": 144, "Dezember": 119},
+      "Sebastian":{ "September": 5,  "Oktober": 89, "November": 104, "Dezember": 104},
+      "Moritz":   { "September": 0,  "Oktober": 40, "November": 73,  "Dezember": 74 },
+      "Thomas":   { "September": 0,  "Oktober": 10, "November": 19,  "Dezember": 24 }
+    };
+
+    const raceArea = document.getElementById("raceArea");
+    const form = document.getElementById("inputForm");
+
+    form.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const month = document.getElementById("month").value;
+      const rawInput = document.getElementById("salesInput").value.trim();
+
+      // Eingaben parsen
+      const sales = {};
+      rawInput.split("\n").forEach(line => {
+        const [name, val] = line.split(";");
+        if(name && val) {
+          sales[name.trim()] = parseFloat(val.trim());
+        }
+      });
+
+      raceArea.innerHTML = "";
+
+      Object.keys(targets).forEach(name => {
+        const track = document.createElement("div");
+        track.className = "race-track";
+
+        // Startlinie
+        const start = document.createElement("div");
+        start.className = "start";
+
+        const horse = document.createElement("div");
+        horse.className = "horse";
+        horse.innerHTML = "🏇";
+
+        const horseName = document.createElement("div");
+        horseName.className = "horse-name";
+        horseName.innerText = name;
+
+        const progressLabel = document.createElement("div");
+        progressLabel.className = "progress-label";
+
+        const goal = document.createElement("div");
+        goal.className = "goal";
+        goal.innerHTML = "🏁";
+
+        track.appendChild(start);
+        track.appendChild(horseName);
+        track.appendChild(horse);
+        track.appendChild(progressLabel);
+        track.appendChild(goal);
+        raceArea.appendChild(track);
+
+        // Fortschritt berechnen (Ist / Soll)
+        const target = targets[name][month];
+        const actual = sales[name] || 0;
+        let percent = 0;
+        if (target > 0) {
+          percent = Math.min(actual / target, 1);
+        }
+        const percentText = ((actual / target) * 100).toFixed(1) + "%";
+
+        setTimeout(() => {
+          const position = percent * (track.offsetWidth - 100);
+          horse.style.left = position + "px";
+          horseName.style.left = position + "px";
+          progressLabel.style.left = position + "px";
+          progressLabel.innerText = percentText;
+
+          if (percent >= 1) {
+            track.style.background = "#32cd32";
+          }
+        }, 200);
+      });
+    });
+  </script>
+</body>
+</html>
