@@ -1,141 +1,161 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<title>Vertriebsrennen Dashboard</title>
-<style>
-  body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
-  h1 { text-align: center; margin-bottom: 40px; }
-  .race-track { position: relative; background: #e8b39b; border: 2px solid #444; border-radius: 8px; margin: 50px 0; height: 140px; overflow: hidden; transition: background 0.5s ease; }
-  .start { position: absolute; left: 0; top: 0; height: 100%; width: 8px; background: white; }
-  .goal { position: absolute; right: 0; top: 0; height: 100%; width: 50px; text-align: center; font-size: 100px; line-height: 140px; }
-  .horse { position: absolute; font-size: 80px; top: 50px; left: 0; transition: left 2s ease; text-align: center; transform: scaleX(-1); }
-  .horse-name { position: absolute; top: 10px; font-weight: bold; text-align: center; width: 150px; transition: left 2s ease; }
-  .progress-label { position: absolute; top: 115px; font-size: 14px; font-weight: bold; color: #222; text-align: center; width: 80px; transition: left 2s ease; }
-  .form-section { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); margin-top: 40px; }
-  textarea { width: 100%; height: 120px; margin-top: 10px; font-family: monospace; }
-</style>
+  <meta charset="utf-8" />
+  <title>Vertriebsrennen Dashboard (Firebase Live)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Arial, sans-serif; background:#f5f5f5; padding:20px; }
+    h1{ text-align:center; margin-bottom:20px; }
+    .race-track{ position:relative; background:#e8b39b; border:2px solid #444; border-radius:8px; margin:30px 0; height:140px; overflow:hidden; transition:background .5s ease; }
+    .start{ position:absolute; left:0; top:0; height:100%; width:8px; background:white; }
+    .goal{ position:absolute; right:0; top:0; height:100%; width:50px; text-align:center; font-size:100px; line-height:140px; }
+    .horse{ position:absolute; font-size:80px; top:50px; left:0; transition:left 1.5s ease; transform:scaleX(-1); text-align:center; }
+    .horse-name{ position:absolute; top:10px; font-weight:bold; text-align:center; width:150px; transition:left 1.5s ease; }
+    .progress-label{ position:absolute; top:115px; font-size:14px; font-weight:bold; text-align:center; width:80px; transition:left 1.5s ease; color:#222; }
+    .form-section{ background:white; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,.2); margin-top:10px; }
+    textarea{ width:100%; height:120px; margin-top:10px; font-family:monospace; }
+  </style>
 </head>
 <body>
-<h1>🏆 Vertriebsrennen Dashboard</h1>
+  <h1>🏆 Vertriebsrennen Dashboard</h1>
 
-<div id="raceArea"></div>
+  <!-- Hier erscheint das Rennen -->
+  <div id="raceArea"></div>
 
-<div class="form-section" id="formSection">
-<form id="inputForm">
-  <label>Monat auswählen: 
-    <select id="month">
-      <option value="September">September</option>
-      <option value="Oktober">Oktober</option>
-      <option value="November">November</option>
-      <option value="Dezember">Dezember</option>
-    </select>
-  </label><br><br>
-
-  <label>Aktuelle Verkäufe (CSV oder Copy/Paste, Format: Name;Wert pro Zeile)</label>
-  <textarea id="salesInput" placeholder="Beispiel:
-Enes;20
+  <!-- Admin-Maske -->
+  <div class="form-section" id="formSection">
+    <form id="inputForm">
+      <label>Monat auswählen:
+        <select id="month">
+          <option>September</option><option>Oktober</option><option>November</option><option>Dezember</option>
+        </select>
+      </label>
+      <br><br>
+      <label>Verkäufe (Name;Wert pro Zeile)</label>
+      <textarea id="salesInput" placeholder="Enes;20
 Florian;40
-Philipp;12
 ..."></textarea>
-  <br><br>
-  <button type="submit">💾 Daten speichern</button>
-</form>
-</div>
+      <br><br>
+      <button type="submit">💾 Daten speichern</button>
+      <span id="status" style="margin-left:12px;color:green;"></span>
+    </form>
+  </div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-<script>
-  // ==== Firebase config ====
-  const firebaseConfig = {
-    apiKey: "AIzaSyBYZ-znrq5HXmf-Ts4TDtlTVKjjA8K6qys",
-    authDomain: "pferderennen-spot.firebaseapp.com",
-    projectId: "pferderennen-spot",
-    storageBucket: "pferderennen-spot.firebasestorage.app",
-    messagingSenderId: "334860163167",
-    appId: "1:334860163167:web:7396a8cfbaec9d502563ea"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+  <script>
+    // ====== HIER deine Firebase-Konfig einfügen ======
+    const firebaseConfig = {
+  apiKey: "AIzaSyBYZ-znrq5HXmf-Ts4TDtlTVKjjA8K6qys",
+  authDomain: "pferderennen-spot.firebaseapp.com",
+  projectId: "pferderennen-spot",
+  storageBucket: "pferderennen-spot.firebasestorage.app",
+  messagingSenderId: "334860163167",
+  appId: "1:334860163167:web:7396a8cfbaec9d502563ea"
+};
+    // ================================================
 
-  // ==== Ziele ====
-  const targets = {
-    "Enes": { "September": 5, "Oktober": 74, "November": 94, "Dezember": 79 },
-    "Florian": { "September": 15, "Oktober": 124, "November": 154, "Dezember": 104 },
-    "Philipp": { "September": 7, "Oktober": 106, "November": 124, "Dezember": 124 },
-    "Mert": { "September": 20, "Oktober": 154, "November": 174, "Dezember": 154 },
-    "Schemus": { "September": 15, "Oktober": 124, "November": 144, "Dezember": 119 },
-    "Sebastian": { "September": 5, "Oktober": 89, "November": 104, "Dezember": 104 },
-    "Moritz": { "September": 0, "Oktober": 40, "November": 73, "Dezember": 74 },
-    "Thomas": { "September": 0, "Oktober": 10, "November": 19, "Dezember": 24 }
-  };
+    // Init Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-  const raceArea = document.getElementById("raceArea");
-  const form = document.getElementById("inputForm");
-  const horseRefs = {};
+    // Ziele (wie gehabt)
+    const targets = {
+      "Enes": { "September":5,"Oktober":74,"November":94,"Dezember":79 },
+      "Florian": { "September":15,"Oktober":124,"November":154,"Dezember":104 },
+      "Philipp": { "September":7,"Oktober":106,"November":124,"Dezember":124 },
+      "Mert": { "September":20,"Oktober":154,"November":174,"Dezember":154 },
+      "Schemus": { "September":15,"Oktober":124,"November":144,"Dezember":119 },
+      "Sebastian": { "September":5,"Oktober":89,"November":104,"Dezember":104 },
+      "Moritz": { "September":0,"Oktober":40,"November":73,"Dezember":74 },
+      "Thomas": { "September":0,"Oktober":10,"November":19,"Dezember":24 }
+    };
 
-  function startRace(month, sales){
-    Object.keys(targets).forEach(name => {
-      let track = horseRefs[name]?.track;
-      if(!track){
-        track = document.createElement("div");
-        track.className = "race-track";
+    const raceArea = document.getElementById('raceArea');
+    const form = document.getElementById('inputForm');
+    const status = document.getElementById('status');
+    const refs = {}; // Referenzen für Animation (vermeidet Re-creation)
 
-        const start = document.createElement("div"); start.className = "start";
-        const horse = document.createElement("div"); horse.className = "horse"; horse.innerHTML = "🏇";
-        const horseName = document.createElement("div"); horseName.className = "horse-name"; horseName.innerText = name;
-        const progressLabel = document.createElement("div"); progressLabel.className = "progress-label";
-        const goal = document.createElement("div"); goal.className = "goal"; goal.innerHTML = "🏁";
+    function startRace(month, sales){
+      // Erstelle Tracks falls noch nicht vorhanden
+      Object.keys(targets).forEach(name => {
+        if(!refs[name]){
+          const track = document.createElement('div'); track.className = 'race-track';
+          const start = document.createElement('div'); start.className = 'start';
+          const horse = document.createElement('div'); horse.className = 'horse'; horse.innerHTML='🏇';
+          const horseName = document.createElement('div'); horseName.className='horse-name'; horseName.innerText = name;
+          const progressLabel = document.createElement('div'); progressLabel.className='progress-label';
+          const goal = document.createElement('div'); goal.className='goal'; goal.innerHTML='🏁';
+          track.appendChild(start); track.appendChild(horseName); track.appendChild(horse);
+          track.appendChild(progressLabel); track.appendChild(goal);
+          raceArea.appendChild(track);
+          refs[name] = { track, horse, horseName, progressLabel };
+        }
+      });
 
-        track.appendChild(start); track.appendChild(horseName); track.appendChild(horse);
-        track.appendChild(progressLabel); track.appendChild(goal);
-        raceArea.appendChild(track);
+      // Nun Positionen updaten
+      Object.keys(targets).forEach(name => {
+        const { track, horse, horseName, progressLabel } = refs[name];
+        const target = targets[name][month] || 0;
+        const actual = (sales && sales[name]) ? sales[name] : 0;
+        const percent = target>0 ? Math.min(actual / target, 1) : 0;
+        const percentText = target>0 ? ((actual/target)*100).toFixed(1)+'%' : '0%';
+        const position = percent * (track.offsetWidth - 100);
+        horse.style.left = position + 'px';
+        horseName.style.left = position + 'px';
+        progressLabel.style.left = position + 'px';
+        progressLabel.innerText = percentText;
+        track.style.background = percent >= 1 ? '#32cd32' : '#e8b39b';
+      });
+    }
 
-        horseRefs[name] = { track, horse, horseName, progressLabel };
-      }
+    // Admin klickt speichern -> Daten in Firestore schreiben
+    form.addEventListener('submit', function(e){
+      e.preventDefault(); // verhindert page reload
+      status.innerText = 'speichert...';
+      const month = document.getElementById('month').value;
+      const raw = document.getElementById('salesInput').value.trim();
+      const sales = {};
+      raw.split('\n').forEach(line => {
+        const parts = line.split(';');
+        if(parts.length >= 2){
+          const name = parts[0].trim();
+          const val = parseFloat(parts[1].trim());
+          if(name) sales[name] = isNaN(val) ? 0 : val;
+        }
+      });
 
-      const { track, horse, horseName, progressLabel } = horseRefs[name];
-      const target = targets[name][month];
-      const actual = sales[name] || 0;
-      let percent = target > 0 ? Math.min(actual / target, 1) : 0;
-      const percentText = ((actual / target) * 100).toFixed(1) + "%";
-
-      const position = percent * (track.offsetWidth - 100);
-      horse.style.left = position + "px";
-      horseName.style.left = position + "px";
-      progressLabel.style.left = position + "px";
-      progressLabel.innerText = percentText;
-
-      track.style.background = percent >= 1 ? "#32cd32" : "#e8b39b";
+      db.collection('sales').doc('current').set({ month, sales })
+        .then(() => {
+          status.innerText = 'gespeichert ✓';
+          // scroll zur Rennanzeige, damit man sieht dass es funktioniert
+          raceArea.scrollIntoView({ behavior: 'smooth' });
+          setTimeout(()=> status.innerText = '', 2000);
+        })
+        .catch(err => {
+          console.error('Fehler beim Speichern:', err);
+          status.innerText = 'Fehler: ' + (err.message || 'siehe Konsole');
+        });
     });
-  }
 
-  // ==== Admin speichert Daten in Firebase ====
-  form.addEventListener("submit", async e => {
-    e.preventDefault();
-    const month = document.getElementById("month").value;
-    const rawInput = document.getElementById("salesInput").value.trim();
-    const sales = {};
-    rawInput.split("\n").forEach(line => {
-      const [name, val] = line.split(";");
-      if(name && val) sales[name.trim()] = parseFloat(val.trim());
-    });
+    // Live-Listener: wird bei Änderungen sofort auf allen Clients ausgeführt
+    db.collection('sales').doc('current')
+      .onSnapshot(doc => {
+        if(doc.exists){
+          const data = doc.data();
+          // Daten in Race rendern
+          startRace(data.month, data.sales);
+        } else {
+          console.log('Kein Dokument "sales/current" gefunden.');
+        }
+      }, err => {
+        console.error('Listener-Fehler:', err);
+      });
 
-    await db.collection("sales").doc("current").set({month, sales});
-    alert("Daten gespeichert!");
-  });
-
-  // ==== Echtzeit Listener für alle Nutzer ====
-  db.collection("sales").doc("current")
-    .onSnapshot(doc => {
-      if(doc.exists){
-        const data = doc.data();
-        startRace(data.month, data.sales);
-      }
-    });
-
-</script>
+    // Hinweis: beim erstmaligen Laden kann es ein paar Sekunden dauern bis Firestore erreichbar ist.
+  </script>
 </body>
 </html>
