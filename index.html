@@ -16,7 +16,6 @@
     .horse{ position:absolute; font-size:80px; top:50px; left:0; transition:left 1.8s ease; transform:scaleX(-1); text-align:center; }
     .horse-name{ position:absolute; top:10px; font-weight:bold; text-align:center; width:150px; transition:left 1.8s ease; }
     .progress-label{ position:absolute; top:115px; font-size:14px; font-weight:bold; text-align:center; width:80px; transition:left 1.8s ease; color:#222; }
-    .controls{ max-width:1200px; margin:0 auto; text-align:right; }
     .note{ font-size:13px; color:#666; text-align:left; max-width:1200px; margin:6px auto 0; }
   </style>
 </head>
@@ -28,7 +27,9 @@
 
   <div id="raceArea"></div>
 
-  <div class="note">Öffne diese Seite auf dem TV oder an Arbeitsplätzen. Änderungen durch Admin erscheinen automatisch.</div>
+  <div class="note">
+    Öffne diese Seite auf dem TV oder an Arbeitsplätzen. Änderungen durch Admin erscheinen automatisch.
+  </div>
 
   <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -37,7 +38,7 @@
   <script>
     // ======= FIREBASE KONFIG - ERSETZE DIESE WERTE MIT DEINEN =======
     const firebaseConfig = {
-   apiKey: "AIzaSyBYZ-znrq5HXmf-Ts4TDtlTVKjjA8K6qys",
+     apiKey: "AIzaSyBYZ-znrq5HXmf-Ts4TDtlTVKjjA8K6qys",
   authDomain: "pferderennen-spot.firebaseapp.com",
   projectId: "pferderennen-spot",
   storageBucket: "pferderennen-spot.firebasestorage.app",
@@ -46,11 +47,9 @@
     };
     // ===============================================================
 
-    // Init
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Ziele
     const targets = {
       "Enes": { "September":5,"Oktober":74,"November":94,"Dezember":79 },
       "Florian": { "September":15,"Oktober":124,"November":154,"Dezember":104 },
@@ -64,10 +63,10 @@
 
     const raceArea = document.getElementById('raceArea');
     const lastEl = document.getElementById('last');
-    const refs = {}; // keep references to DOM nodes per horse
+    const refs = {}; // DOM-Referenzen pro Pferd
 
     function renderRace(month, sales){
-      // create tracks if not exist
+      // 1️⃣ Erst Positionen updaten
       Object.keys(targets).forEach(name => {
         if(!refs[name]){
           const track = document.createElement('div'); track.className = 'race-track';
@@ -81,15 +80,11 @@
           raceArea.appendChild(track);
           refs[name] = { track, horse, horseName, progressLabel };
         }
-      });
-
-      // update positions
-      Object.keys(targets).forEach(name => {
         const { track, horse, horseName, progressLabel } = refs[name];
-        const target = (targets[name] && targets[name][month]) || 0;
+        const target = targets[name][month] || 0;
         const actual = (sales && sales[name]) ? sales[name] : 0;
         const percent = target > 0 ? Math.min(actual / target, 1) : 0;
-        const percentText = target > 0 ? ((actual / target) * 100).toFixed(1) + '%' : '0%';
+        const percentText = target > 0 ? ((actual/target)*100).toFixed(1)+'%' : '0%';
         const position = percent * (track.offsetWidth - 100);
         horse.style.left = position + 'px';
         horseName.style.left = position + 'px';
@@ -97,9 +92,22 @@
         progressLabel.innerText = percentText;
         track.style.background = percent >= 1 ? '#32cd32' : '#e8b39b';
       });
+
+      // 2️⃣ Pferde nach Fortschritt sortieren und DOM neu anordnen
+      const horseProgress = Object.keys(targets).map(name => {
+        const target = targets[name][month] || 0;
+        const actual = (sales && sales[name]) ? sales[name] : 0;
+        const percent = target > 0 ? Math.min(actual / target, 1) : 0;
+        return { name, percent };
+      });
+      horseProgress.sort((a,b)=>b.percent - a.percent);
+      horseProgress.forEach(h => {
+        const { track } = refs[h.name];
+        raceArea.appendChild(track); // verschiebt Track nach oben/unten
+      });
     }
 
-    // realtime listener
+    // Echtzeit Listener
     db.collection('sales').doc('current')
       .onSnapshot(doc => {
         if(!doc.exists){
@@ -108,20 +116,16 @@
         }
         const data = doc.data();
         renderRace(data.month, data.sales);
-
-        // show updatedAt if present
         if(data.updatedAt && data.updatedAt.toDate){
           const d = data.updatedAt.toDate();
           lastEl.innerText = 'Letzte Aktualisierung: ' + d.toLocaleString();
         } else {
           lastEl.innerText = 'Letzte Aktualisierung: jetzt';
         }
-      }, err => {
+      }, err=>{
         console.error('Listener-Fehler:', err);
         lastEl.innerText = 'Letzte Aktualisierung: Fehler';
       });
-
-    // optional: falls Firestore langsam ist, lade initial lokale Daten falls verfügbar
   </script>
 </body>
 </html>
