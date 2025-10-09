@@ -1,131 +1,145 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="utf-8" />
-  <title>Vertriebsrennen – Live</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    body { font-family: Arial, sans-serif; background:#f5f5f5; padding:20px; }
-    header{ display:flex; align-items:center; justify-content:space-between; max-width:1200px; margin:0 auto; }
-    h1{ margin:0; font-size:22px; }
-    #last { color:#444; font-size:14px; }
-    #raceArea{ max-width:1200px; margin:20px auto; }
-    .race-track{ position:relative; background:#e8b39b; border:2px solid #444; border-radius:8px; margin:24px 0; height:140px; overflow:hidden; transition:background .5s ease; }
-    .start{ position:absolute; left:0; top:0; height:100%; width:8px; background:white; }
-    .goal{ position:absolute; right:0; top:0; height:100%; width:50px; text-align:center; font-size:100px; line-height:140px; }
-    .horse{ position:absolute; font-size:80px; top:50px; left:0; transition:left 1.8s ease; transform:scaleX(-1); text-align:center; }
-    .horse-name{ position:absolute; top:10px; font-weight:bold; text-align:center; width:150px; transition:left 1.8s ease; }
-    .progress-label{ position:absolute; top:115px; font-size:14px; font-weight:bold; text-align:center; width:80px; transition:left 1.8s ease; color:#222; }
-    .note{ font-size:13px; color:#666; text-align:left; max-width:1200px; margin:6px auto 0; }
-  </style>
+<meta charset="utf-8" />
+<title>Vertriebsrennen – Live</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  body { font-family: Arial, sans-serif; background:#f5f5f5; padding:20px; }
+  header{ display:flex; align-items:center; justify-content:space-between; max-width:1200px; margin:0 auto; }
+  h1{ margin:0; font-size:22px; }
+  #last { color:#444; font-size:14px; }
+  #raceArea{ max-width:1200px; margin:20px auto; position:relative; height:auto; }
+  .race-track{
+    position:absolute; left:0; width:100%; background:#e8b39b; border:2px solid #444; border-radius:8px; height:140px;
+    overflow:hidden; transition: top 1s ease, background .5s ease;
+  }
+  .start{ position:absolute; left:0; top:0; height:100%; width:8px; background:white; }
+  .goal{ position:absolute; right:0; top:0; height:100%; width:50px; text-align:center; font-size:100px; line-height:140px; }
+  .horse{ position:absolute; font-size:80px; top:50px; left:0; transition:left 1.8s ease; transform:scaleX(-1); text-align:center; }
+  .horse-name{ position:absolute; top:10px; font-weight:bold; text-align:center; width:150px; transition:left 1.8s ease; }
+  .progress-label{ position:absolute; top:115px; font-size:14px; font-weight:bold; text-align:center; width:80px; transition:left 1.8s ease; color:#222; }
+  .note{ font-size:13px; color:#666; text-align:left; max-width:1200px; margin:6px auto 0; }
+</style>
 </head>
 <body>
-  <header>
-    <h1>🏆 Vertriebsrennen – Live</h1>
-    <div id="last">Letzte Aktualisierung: –</div>
-  </header>
+<header>
+  <h1>🏆 Vertriebsrennen – Live</h1>
+  <div id="last">Letzte Aktualisierung: –</div>
+</header>
 
-  <div id="raceArea"></div>
+<div id="raceArea"></div>
 
-  <div class="note">
-    Öffne diese Seite auf dem TV oder an Arbeitsplätzen. Änderungen durch Admin erscheinen automatisch.
-  </div>
+<div class="note">
+  Öffne diese Seite auf dem TV oder an Arbeitsplätzen. Änderungen durch Admin erscheinen automatisch.
+</div>
 
-  <!-- Firebase (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<!-- Firebase (compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <script>
-    // ======= FIREBASE KONFIG - ERSETZE DIESE WERTE MIT DEINEN =======
-    const firebaseConfig = {
-     apiKey: "AIzaSyBYZ-znrq5HXmf-Ts4TDtlTVKjjA8K6qys",
+<script>
+  // ======= FIREBASE KONFIG - ERSETZE DIESE WERTE MIT DEINEN =======
+  const firebaseConfig = {
+   apiKey: "AIzaSyBYZ-znrq5HXmf-Ts4TDtlTVKjjA8K6qys",
   authDomain: "pferderennen-spot.firebaseapp.com",
   projectId: "pferderennen-spot",
   storageBucket: "pferderennen-spot.firebasestorage.app",
   messagingSenderId: "334860163167",
   appId: "1:334860163167:web:7396a8cfbaec9d502563ea"
-    };
-    // ===============================================================
+  };
+  // ===============================================================
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
 
-    const targets = {
-      "Enes": { "September":5,"Oktober":74,"November":94,"Dezember":79 },
-      "Florian": { "September":15,"Oktober":124,"November":154,"Dezember":104 },
-      "Philipp": { "September":7,"Oktober":106,"November":124,"Dezember":124 },
-      "Mert": { "September":20,"Oktober":154,"November":174,"Dezember":154 },
-      "Schemus": { "September":15,"Oktober":124,"November":144,"Dezember":119 },
-      "Sebastian": { "September":5,"Oktober":89,"November":104,"Dezember":104 },
-      "Moritz": { "September":0,"Oktober":40,"November":73,"Dezember":74 },
-      "Thomas": { "September":0,"Oktober":10,"November":19,"Dezember":24 }
-    };
+  const targets = {
+    "Enes": { "September":5,"Oktober":74,"November":94,"Dezember":79 },
+    "Florian": { "September":15,"Oktober":124,"November":154,"Dezember":104 },
+    "Philipp": { "September":7,"Oktober":106,"November":124,"Dezember":124 },
+    "Mert": { "September":20,"Oktober":154,"November":174,"Dezember":154 },
+    "Schemus": { "September":15,"Oktober":124,"November":144,"Dezember":119 },
+    "Sebastian": { "September":5,"Oktober":89,"November":104,"Dezember":104 },
+    "Moritz": { "September":0,"Oktober":40,"November":73,"Dezember":74 },
+    "Thomas": { "September":0,"Oktober":10,"November":19,"Dezember":24 }
+  };
 
-    const raceArea = document.getElementById('raceArea');
-    const lastEl = document.getElementById('last');
-    const refs = {}; // DOM-Referenzen pro Pferd
+  const raceArea = document.getElementById('raceArea');
+  const lastEl = document.getElementById('last');
+  const refs = {}; // DOM-Referenzen pro Pferd
+  const trackHeight = 150; // Höhe inkl. Margin
 
-    function renderRace(month, sales){
-      // 1️⃣ Erst Positionen updaten
-      Object.keys(targets).forEach(name => {
-        if(!refs[name]){
-          const track = document.createElement('div'); track.className = 'race-track';
-          const start = document.createElement('div'); start.className = 'start';
-          const horse = document.createElement('div'); horse.className = 'horse'; horse.innerHTML = '🏇';
-          const horseName = document.createElement('div'); horseName.className = 'horse-name'; horseName.innerText = name;
-          const progressLabel = document.createElement('div'); progressLabel.className = 'progress-label';
-          const goal = document.createElement('div'); goal.className = 'goal'; goal.innerHTML = '🏁';
-          track.appendChild(start); track.appendChild(horseName); track.appendChild(horse);
-          track.appendChild(progressLabel); track.appendChild(goal);
-          raceArea.appendChild(track);
-          refs[name] = { track, horse, horseName, progressLabel };
-        }
-        const { track, horse, horseName, progressLabel } = refs[name];
-        const target = targets[name][month] || 0;
-        const actual = (sales && sales[name]) ? sales[name] : 0;
-        const percent = target > 0 ? Math.min(actual / target, 1) : 0;
-        const percentText = target > 0 ? ((actual/target)*100).toFixed(1)+'%' : '0%';
-        const position = percent * (track.offsetWidth - 100);
-        horse.style.left = position + 'px';
-        horseName.style.left = position + 'px';
-        progressLabel.style.left = position + 'px';
-        progressLabel.innerText = percentText;
-        track.style.background = percent >= 1 ? '#32cd32' : '#e8b39b';
-      });
+  function renderRace(month, sales){
+    // 1️⃣ Track erstellen falls noch nicht vorhanden
+    Object.keys(targets).forEach((name, index) => {
+      if(!refs[name]){
+        const track = document.createElement('div'); track.className='race-track';
+        const start = document.createElement('div'); start.className='start';
+        const horse = document.createElement('div'); horse.className='horse'; horse.innerHTML='🏇';
+        const horseName = document.createElement('div'); horseName.className='horse-name'; horseName.innerText=name;
+        const progressLabel = document.createElement('div'); progressLabel.className='progress-label';
+        const goal = document.createElement('div'); goal.className='goal'; goal.innerHTML='🏁';
+        track.appendChild(start); track.appendChild(horseName); track.appendChild(horse);
+        track.appendChild(progressLabel); track.appendChild(goal);
+        raceArea.appendChild(track);
+        refs[name] = { track, horse, horseName, progressLabel };
+      }
+    });
 
-      // 2️⃣ Pferde nach Fortschritt sortieren und DOM neu anordnen
-      const horseProgress = Object.keys(targets).map(name => {
-        const target = targets[name][month] || 0;
-        const actual = (sales && sales[name]) ? sales[name] : 0;
-        const percent = target > 0 ? Math.min(actual / target, 1) : 0;
-        return { name, percent };
-      });
-      horseProgress.sort((a,b)=>b.percent - a.percent);
-      horseProgress.forEach(h => {
-        const { track } = refs[h.name];
-        raceArea.appendChild(track); // verschiebt Track nach oben/unten
-      });
-    }
+    // 2️⃣ Pferde-Positionsberechnung
+    const horseProgress = Object.keys(targets).map(name => {
+      const target = targets[name][month] || 0;
+      const actual = (sales && sales[name]) ? sales[name] : 0;
+      const percent = target > 0 ? Math.min(actual / target, 1) : 0;
+      return { name, percent };
+    });
 
-    // Echtzeit Listener
-    db.collection('sales').doc('current')
-      .onSnapshot(doc => {
-        if(!doc.exists){
-          lastEl.innerText = 'Letzte Aktualisierung: –';
-          return;
-        }
-        const data = doc.data();
-        renderRace(data.month, data.sales);
-        if(data.updatedAt && data.updatedAt.toDate){
-          const d = data.updatedAt.toDate();
-          lastEl.innerText = 'Letzte Aktualisierung: ' + d.toLocaleString();
-        } else {
-          lastEl.innerText = 'Letzte Aktualisierung: jetzt';
-        }
-      }, err=>{
-        console.error('Listener-Fehler:', err);
-        lastEl.innerText = 'Letzte Aktualisierung: Fehler';
-      });
-  </script>
+    // Pferde nach Fortschritt sortieren (absteigend)
+    horseProgress.sort((a,b)=>b.percent - a.percent);
+
+    // 3️⃣ Position & Track top berechnen und animieren
+    horseProgress.forEach((h, i) => {
+      const { track, horse, horseName, progressLabel } = refs[h.name];
+      const target = targets[h.name][month] || 0;
+      const actual = (sales && sales[h.name]) ? sales[h.name] : 0;
+      const percent = target > 0 ? Math.min(actual / target, 1) : 0;
+      const percentText = target > 0 ? ((actual/target)*100).toFixed(1)+'%' : '0%';
+      const leftPos = percent * (track.offsetWidth - 100);
+
+      // Pferd horizontal bewegen
+      horse.style.left = leftPos + 'px';
+      horseName.style.left = leftPos + 'px';
+      progressLabel.style.left = leftPos + 'px';
+      progressLabel.innerText = percentText;
+
+      // Track grün wenn 100%
+      track.style.background = percent>=1?'#32cd32':'#e8b39b';
+
+      // Track vertikal sortieren (sanft)
+      track.style.top = (i * trackHeight) + 'px';
+    });
+
+    // Container-Höhe dynamisch anpassen
+    raceArea.style.height = horseProgress.length * trackHeight + 'px';
+  }
+
+  // Echtzeit Listener
+  db.collection('sales').doc('current')
+    .onSnapshot(doc=>{
+      if(!doc.exists){ lastEl.innerText='Letzte Aktualisierung: –'; return; }
+      const data = doc.data();
+      renderRace(data.month, data.sales);
+
+      if(data.updatedAt && data.updatedAt.toDate){
+        const d = data.updatedAt.toDate();
+        lastEl.innerText='Letzte Aktualisierung: '+d.toLocaleString();
+      } else {
+        lastEl.innerText='Letzte Aktualisierung: jetzt';
+      }
+    }, err=>{
+      console.error('Listener-Fehler:', err);
+      lastEl.innerText='Letzte Aktualisierung: Fehler';
+    });
+</script>
 </body>
 </html>
