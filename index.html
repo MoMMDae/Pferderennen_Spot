@@ -12,7 +12,7 @@
   #raceArea{ max-width:1200px; margin:20px auto; position:relative; height:auto; }
   .race-track{
     position:absolute; left:0; width:100%; background:#e8b39b; border:2px solid #444; border-radius:8px; height:140px;
-    overflow:hidden; transition: top 1s ease, background .5s ease;
+    overflow:hidden; transition: top 5s ease, background 5s ease;
   }
   .start{ position:absolute; left:0; top:0; height:100%; width:8px; background:white; }
   .goal{ position:absolute; right:0; top:0; height:100%; width:50px; text-align:center; font-size:100px; line-height:140px; }
@@ -67,7 +67,7 @@
   const raceArea = document.getElementById('raceArea');
   const lastEl = document.getElementById('last');
   const refs = {}; // DOM-Referenzen pro Pferd
-  const trackHeight = 150; // Höhe inkl. Margin
+  const trackHeight = 90; // Höhe inkl. Margin
 
   function renderRace(month, sales){
     // 1️⃣ Track erstellen falls noch nicht vorhanden
